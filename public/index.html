@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BK Tennis Club</title>
+  <meta name="description" content="BK Tennis Club — free, beginner-friendly tennis. Where tennis transcends into community.">
+  <meta property="og:title" content="BK Tennis Club">
+  <meta property="og:description" content="Free, beginner-friendly tennis. Where tennis transcends into community.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a href="#top" class="brand">BK Tennis Club</a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Toggle menu">☰</button>
+      <nav id="nav-links" class="nav-links">
+        <a href="#about">About</a>
+        <a href="#how">How it works</a>
+        <a href="#events">Events</a>
+        <a href="#faq">FAQ</a>
+        <a href="#join" class="btn btn-small">Join us</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container">
+        <p class="eyebrow">Free tennis · Beginner friendly</p>
+        <h1>Where tennis transcends into community.</h1>
+        <p class="lead">BK Tennis Club makes tennis accessible. No membership fees, no experience needed. Just show up, pick up a racket, and meet your people.</p>
+        <div class="hero-actions">
+          <a href="#join" class="btn">Join the group chat</a>
+          <a href="#events" class="btn btn-outline">See upcoming events</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="section">
+      <div class="container">
+        <h2>About the club</h2>
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>Free, always</h3>
+            <p>Tennis shouldn't cost a fortune to try. Our sessions are free so anyone can get on court.</p>
+          </article>
+          <article class="card">
+            <h3>Beginner friendly</h3>
+            <p>Never held a racket? Perfect. Players of every level hit together, and someone's always happy to show you the basics.</p>
+          </article>
+          <article class="card">
+            <h3>Community first</h3>
+            <p>Tennis is the excuse; the community is the point. Expect music, good vibes, and new friends.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="section section-alt">
+      <div class="container">
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li>
+            <h3>Join the group chat</h3>
+            <p>That's where we post session times, court locations, and last-minute updates.</p>
+          </li>
+          <li>
+            <h3>Pull up on Friday nights</h3>
+            <p>Our regular Friday night sessions are the easiest way to get started. Bring water and comfy shoes.</p>
+          </li>
+          <li>
+            <h3>Play, rotate, repeat</h3>
+            <p>We rotate partners so everyone gets court time and meets new people. Spare rackets are often around. Just ask.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="events" class="section">
+      <div class="container">
+        <h2>Events</h2>
+        <h3 class="subhead">Upcoming</h3>
+        <div id="events-upcoming" class="grid grid-2 events"></div>
+        <p id="events-empty" class="muted" hidden>
+          No events posted right now. Follow us on
+          <a href="https://www.instagram.com/bktennisclub/" target="_blank" rel="noopener">Instagram</a>
+          for the next one.
+        </p>
+        <details class="past-events">
+          <summary>Past events</summary>
+          <div id="events-past" class="grid grid-2 events"></div>
+        </details>
+      </div>
+    </section>
+
+    <section id="faq" class="section section-alt">
+      <div class="container narrow">
+        <h2>FAQ</h2>
+        <details class="faq">
+          <summary>Is it really free?</summary>
+          <p>Yes. Our regular sessions are free. Some special events with partners may have their own RSVP, but we'll always say so up front.</p>
+        </details>
+        <details class="faq">
+          <summary>I've never played. Can I still come?</summary>
+          <p>Absolutely. The club was made for beginners. You'll be hitting with people at every level.</p>
+        </details>
+        <details class="faq">
+          <summary>Do I need my own racket?</summary>
+          <p>Bring one if you have it. If not, let us know in the group chat and we'll try to have a spare.</p>
+        </details>
+        <details class="faq">
+          <summary>Where do we play?</summary>
+          <p>Court locations are shared in the group chat before each session.</p>
+        </details>
+      </div>
+    </section>
+
+    <section id="join" class="section cta">
+      <div class="container narrow center">
+        <h2>Come play with us</h2>
+        <p class="lead">Follow along on socials and DM us to get added to the group chat.</p>
+        <div class="hero-actions center">
+          <a href="https://www.instagram.com/bktennisclub/" class="btn" target="_blank" rel="noopener">DM us on Instagram</a>
+          <a href="https://www.tiktok.com/@bktennisclub" class="btn btn-outline" target="_blank" rel="noopener">TikTok</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© <span id="year"></span> BK Tennis Club</p>
+      <nav class="footer-links">
+        <a href="https://www.instagram.com/bktennisclub/" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.tiktok.com/@bktennisclub" target="_blank" rel="noopener">TikTok</a>
+        <a href="https://linktr.ee/bktennisclub" target="_blank" rel="noopener">Linktree</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="/events.js"></script>
+  <script src="/main.js"></script>
+</body>
+</html>

@@ -74,3 +74,59 @@
   document.getElementById("events-empty").hidden = upcoming.length > 0;
   document.querySelector(".past-events").hidden = past.length === 0;
 })();
+
+// Enrollment form
+(function () {
+  const form = document.getElementById("enroll-form");
+  if (!form) return;
+  const status = document.getElementById("enroll-status");
+  const button = form.querySelector("button[type=submit]");
+
+  const setErrors = (errors) => {
+    form.querySelectorAll(".field-error").forEach((el) => {
+      el.textContent = (errors && errors[el.dataset.for]) || "";
+    });
+  };
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setErrors(null);
+    status.className = "form-status";
+    status.textContent = "";
+    button.disabled = true;
+
+    const fd = new FormData(form);
+    const payload = {
+      name: fd.get("name"),
+      phone: fd.get("phone"),
+      email: fd.get("email"),
+      level: fd.get("level"),
+      website: fd.get("website"),
+      smsOptIn: fd.get("smsOptIn") === "on",
+    };
+
+    try {
+      const res = await fetch("/api/enroll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        form.reset();
+        status.textContent = payload.smsOptIn
+          ? "You're in! Check your phone for a welcome text."
+          : "You're in! See you on court.";
+      } else {
+        setErrors(data.errors);
+        status.className = "form-status error";
+        status.textContent = data.errors ? "Please fix the fields above." : (data.error || "Something went wrong. Please try again.");
+      }
+    } catch {
+      status.className = "form-status error";
+      status.textContent = "Couldn't reach the server. Please try again.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+})();

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>BK Tennis Club Admin</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .admin { padding: 32px 0 64px; }
+    .stats { display: flex; gap: 24px; flex-wrap: wrap; margin: 0 0 24px; }
+    .stats strong { font-size: 1.6rem; display: block; }
+    .form textarea { min-height: 120px; resize: vertical; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .card + .card { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a href="/" class="brand">BK Tennis Club · Admin</a>
+      <button id="logout" class="btn btn-small btn-outline" hidden>Log out</button>
+    </div>
+  </header>
+
+  <main class="container admin">
+    <form id="login" class="form card">
+      <h2>Admin login</h2>
+      <label>Admin token <input name="token" type="password" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">Log in</button>
+      <p id="login-status" class="form-status error"></p>
+    </form>
+
+    <div id="app" hidden>
+      <div class="stats">
+        <div><strong id="stat-subscribed">0</strong> subscribed to texts</div>
+        <div><strong id="stat-total">0</strong> total sign-ups</div>
+        <div><strong id="stat-optout">0</strong> opted out</div>
+      </div>
+
+      <form id="compose" class="form card">
+        <h2>Send a text</h2>
+        <label>Message
+          <textarea name="body" maxlength="1600" required placeholder="Friday session is on! 7pm at McCarren Park courts 🎾"></textarea>
+        </label>
+        <p class="muted" id="charcount">0 characters · 1 segment</p>
+        <label>Test number <span class="muted">(optional: send only to this number first)</span>
+          <input name="testTo" type="tel" placeholder="(718) 555-0123">
+        </label>
+        <div class="row">
+          <button class="btn btn-outline" type="submit" name="mode" value="test">Send test</button>
+          <button class="btn" type="submit" name="mode" value="all">Send to all subscribers</button>
+        </div>
+        <p id="compose-status" class="form-status" role="status"></p>
+      </form>
+
+      <section class="card">
+        <h2>Recent replies</h2>
+        <div class="table-wrap"><table><thead><tr><th>When</th><th>From</th><th>Message</th></tr></thead><tbody id="inbound"></tbody></table></div>
+      </section>
+
+      <section class="card">
+        <h2>Past broadcasts</h2>
+        <div class="table-wrap"><table><thead><tr><th>When</th><th>Sent</th><th>Failed</th><th>Message</th></tr></thead><tbody id="broadcasts"></tbody></table></div>
+      </section>
+
+      <section class="card">
+        <h2>Members</h2>
+        <div class="row"><button id="export" class="btn btn-small btn-outline" type="button">Export CSV</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Level</th><th>Texts</th><th>Joined</th></tr></thead><tbody id="members"></tbody></table></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

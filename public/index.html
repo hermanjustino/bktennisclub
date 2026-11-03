@@ -4,127 +4,209 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BK Tennis Club</title>
-  <meta name="description" content="BK Tennis Club — free, beginner-friendly tennis. Where tennis transcends into community.">
+  <meta name="description" content="BK Tennis Club: free, beginner-friendly tennis. Where tennis transcends into community.">
+  <meta name="theme-color" content="#6a373a">
   <meta property="og:title" content="BK Tennis Club">
   <meta property="og:description" content="Free, beginner-friendly tennis. Where tennis transcends into community.">
   <meta property="og:type" content="website">
+  <meta property="og:image" content="/images/club-photo.png">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header class="site-header">
     <div class="container nav">
-      <a href="#top" class="brand">BK Tennis Club</a>
-      <button class="nav-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Toggle menu">☰</button>
-      <nav id="nav-links" class="nav-links">
+      <a href="#top" class="brand">
+        <img src="/images/club-photo.png" alt="" width="44" height="44">
+        <span>BK Tennis Club</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Open menu">
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <nav id="nav-links" class="nav-links" aria-label="Main">
         <a href="#about">About</a>
-        <a href="#how">How it works</a>
+        <a href="#fridays">Friday nights</a>
         <a href="#events">Events</a>
         <a href="#faq">FAQ</a>
-        <a href="#join" class="btn btn-small">Join us</a>
+        <a href="#join" class="btn">Join the group chat</a>
       </nav>
     </div>
   </header>
 
   <main id="top">
-    <section class="hero">
-      <div class="container">
-        <p class="eyebrow">Free tennis · Beginner friendly</p>
-        <h1>Where tennis transcends into community.</h1>
-        <p class="lead">BK Tennis Club makes tennis accessible. No membership fees, no experience needed. Just show up, pick up a racket, and meet your people.</p>
-        <div class="hero-actions">
-          <a href="#join" class="btn">Join the group chat</a>
-          <a href="#events" class="btn btn-outline">See upcoming events</a>
+    <section class="hero checker">
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <span class="pill">Free tennis · Beginner friendly</span>
+          <h1>Where tennis transcends into community.</h1>
+          <p class="lead">No membership fees. No experience needed. Just pull up, pick up a racket, and meet your people.</p>
+          <div class="btn-group">
+            <a href="#join" class="btn btn-lg">Join the group chat</a>
+            <a href="#events" class="btn btn-lg btn-accent">See upcoming events</a>
+          </div>
+        </div>
+        <div class="hero-photo">
+          <figure class="print">
+            <img src="/images/club-photo.png" alt="Club members raising their rackets on a court at night" width="277" height="277">
+            <figcaption>Friday nights, under the lights</figcaption>
+            <span class="sticker" aria-hidden="true">100% free</span>
+          </figure>
         </div>
       </div>
     </section>
 
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>Free tennis ● Beginner friendly ● Friday nights ● Tennis, tea &amp; DJs ● All levels welcome ●</span><span>Free tennis ● Beginner friendly ● Friday nights ● Tennis, tea &amp; DJs ● All levels welcome ●</span><span>Free tennis ● Beginner friendly ● Friday nights ● Tennis, tea &amp; DJs ● All levels welcome ●</span><span>Free tennis ● Beginner friendly ● Friday nights ● Tennis, tea &amp; DJs ● All levels welcome ●</span>
+      </div>
+    </div>
+
     <section id="about" class="section">
       <div class="container">
-        <h2>About the club</h2>
-        <div class="grid grid-3">
+        <div class="section-head">
+          <h2 class="section-title" style="max-width: 14ch">Tennis is the excuse. Community is the point.</h2>
+          <p class="section-intro">BK Tennis Club makes tennis accessible to anyone who wants to try it, whether you've played for years or never held a racket.</p>
+        </div>
+        <div class="card-grid">
           <article class="card">
+            <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6a373a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6c3.2 3.2 3.2 9.6 0 12.8M18.4 5.6c-3.2 3.2-3.2 9.6 0 12.8"/></svg>
             <h3>Free, always</h3>
             <p>Tennis shouldn't cost a fortune to try. Our sessions are free so anyone can get on court.</p>
           </article>
           <article class="card">
+            <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6a373a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>
             <h3>Beginner friendly</h3>
-            <p>Never held a racket? Perfect. Players of every level hit together, and someone's always happy to show you the basics.</p>
+            <p>Never played? Perfect. Every level hits together, and someone's always happy to show you the basics.</p>
           </article>
           <article class="card">
+            <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6a373a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5M15 14.2c3.3-.6 6.5 1.6 6.5 5.8"/></svg>
             <h3>Community first</h3>
-            <p>Tennis is the excuse; the community is the point. Expect music, good vibes, and new friends.</p>
+            <p>Music, good vibes and new friends. People come for the tennis and stay for each other.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section id="how" class="section section-alt">
+    <section id="fridays" class="section checker">
       <div class="container">
-        <h2>How it works</h2>
-        <ol class="steps">
-          <li>
-            <h3>Join the group chat</h3>
-            <p>That's where we post session times, court locations, and last-minute updates.</p>
-          </li>
-          <li>
-            <h3>Pull up on Friday nights</h3>
-            <p>Our regular Friday night sessions are the easiest way to get started. Bring water and comfy shoes.</p>
-          </li>
-          <li>
-            <h3>Play, rotate, repeat</h3>
-            <p>We rotate partners so everyone gets court time and meets new people. Spare rackets are often around. Just ask.</p>
-          </li>
-        </ol>
+        <div class="panel">
+          <div>
+            <span class="eyebrow">How it works</span>
+            <h2>Your first Friday night</h2>
+          </div>
+          <ol class="steps">
+            <li>
+              <h3>Join the group chat</h3>
+              <p>Session times, court locations and last-minute updates all land here first.</p>
+            </li>
+            <li>
+              <h3>Pull up on Friday</h3>
+              <p>Our regular Friday night session is the easiest way in. Bring water and comfy shoes, nothing else required.</p>
+            </li>
+            <li>
+              <h3>Play, rotate, repeat</h3>
+              <p>We rotate partners so everyone gets court time and meets someone new.</p>
+            </li>
+          </ol>
+        </div>
       </div>
     </section>
 
     <section id="events" class="section">
       <div class="container">
-        <h2>Events</h2>
-        <h3 class="subhead">Upcoming</h3>
-        <div id="events-upcoming" class="grid grid-2 events"></div>
-        <p id="events-empty" class="muted" hidden>
-          No events posted right now. Follow us on
-          <a href="https://www.instagram.com/bktennisclub/" target="_blank" rel="noopener">Instagram</a>
-          for the next one.
-        </p>
-        <details class="past-events">
+        <div class="section-head">
+          <h2 class="section-title">Events</h2>
+          <a href="https://www.instagram.com/bktennisclub/" target="_blank" rel="noopener" style="font-weight: 600; font-size: 17px">Follow on Instagram for drops</a>
+        </div>
+        <div class="event-list">
+          <!-- Recurring session: always shown first -->
+          <article class="event">
+            <div class="event-date checker">
+              <span class="dow">Every</span>
+              <span class="day word">Friday</span>
+            </div>
+            <div class="event-body">
+              <span class="pill">Weekly</span>
+              <h3>Friday Night Tennis</h3>
+              <p class="event-meta">Time &amp; courts posted in the group chat</p>
+              <p>Our weekly free session. All levels, rotating partners, good music.</p>
+            </div>
+            <div class="event-action">
+              <a href="#join" class="btn">Get the details</a>
+            </div>
+          </article>
+          <div id="events-upcoming" class="event-list"></div>
+        </div>
+        <details class="past-events" hidden>
           <summary>Past events</summary>
-          <div id="events-past" class="grid grid-2 events"></div>
+          <div id="events-past" class="event-list"></div>
         </details>
       </div>
     </section>
 
-    <section id="faq" class="section section-alt">
+    <section class="section gallery" aria-labelledby="gallery-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="gallery-title" class="section-title on-dark">On court</h2>
+        </div>
+        <div class="gallery-grid">
+          <img src="/images/club-photo.png" alt="Club members raising rackets at a night session" width="277" height="277" loading="lazy">
+          <a class="gallery-tile" href="https://www.instagram.com/bktennisclub/" target="_blank" rel="noopener">
+            <strong>More on Instagram</strong>
+            <span>@bktennisclub</span>
+          </a>
+          <a class="gallery-tile accent" href="https://www.tiktok.com/@bktennisclub" target="_blank" rel="noopener">
+            <strong>Watch on TikTok</strong>
+            <span>@bktennisclub</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section">
       <div class="container narrow">
-        <h2>FAQ</h2>
-        <details class="faq">
-          <summary>Is it really free?</summary>
-          <p>Yes. Our regular sessions are free. Some special events with partners may have their own RSVP, but we'll always say so up front.</p>
-        </details>
-        <details class="faq">
-          <summary>I've never played. Can I still come?</summary>
-          <p>Absolutely. The club was made for beginners. You'll be hitting with people at every level.</p>
-        </details>
-        <details class="faq">
-          <summary>Do I need my own racket?</summary>
-          <p>Bring one if you have it. If not, let us know in the group chat and we'll try to have a spare.</p>
-        </details>
-        <details class="faq">
-          <summary>Where do we play?</summary>
-          <p>Court locations are shared in the group chat before each session.</p>
-        </details>
+        <div class="section-head">
+          <h2 class="section-title">Questions</h2>
+        </div>
+        <div class="faq-list">
+          <details class="faq" open>
+            <summary>Is it really free?</summary>
+            <p>Yes. Regular sessions are free. Partner events may have their own RSVP, and we'll always say so up front.</p>
+          </details>
+          <details class="faq">
+            <summary>I've never played. Can I still come?</summary>
+            <p>Absolutely. The club was made for beginners.</p>
+          </details>
+          <details class="faq">
+            <summary>Do I need my own racket?</summary>
+            <p>Bring one if you have it. If not, ask in the group chat and we'll try to have a spare.</p>
+          </details>
+          <details class="faq">
+            <summary>Where do we play?</summary>
+            <p>Court locations are shared in the group chat before each session.</p>
+          </details>
+        </div>
       </div>
     </section>
 
-    <section id="join" class="section cta">
-      <div class="container narrow center">
-        <h2>Come play with us</h2>
-        <p class="lead">Follow along on socials and DM us to get added to the group chat.</p>
-        <div class="hero-actions center">
-          <a href="https://www.instagram.com/bktennisclub/" class="btn" target="_blank" rel="noopener">DM us on Instagram</a>
-          <a href="https://www.tiktok.com/@bktennisclub" class="btn btn-outline" target="_blank" rel="noopener">TikTok</a>
+    <section id="join" class="join checker">
+      <div class="container">
+        <div class="join-card">
+          <h2>Come play with us</h2>
+          <p>DM us on Instagram to get added to the group chat. See you on Friday.</p>
+          <div class="btn-group">
+            <a href="https://www.instagram.com/bktennisclub/" class="btn btn-lg btn-ink" target="_blank" rel="noopener">
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor"/></svg>
+              DM on Instagram
+            </a>
+            <a href="https://www.tiktok.com/@bktennisclub" class="btn btn-lg" target="_blank" rel="noopener">
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5M14 3c.5 2.6 2.4 4.4 5 4.6"/></svg>
+              Watch on TikTok
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -132,12 +214,13 @@
 
   <footer class="site-footer">
     <div class="container footer-inner">
-      <p>© <span id="year"></span> BK Tennis Club</p>
-      <nav class="footer-links">
+      <span class="footer-brand">BK Tennis Club</span>
+      <nav class="footer-links" aria-label="Social">
         <a href="https://www.instagram.com/bktennisclub/" target="_blank" rel="noopener">Instagram</a>
         <a href="https://www.tiktok.com/@bktennisclub" target="_blank" rel="noopener">TikTok</a>
         <a href="https://linktr.ee/bktennisclub" target="_blank" rel="noopener">Linktree</a>
       </nav>
+      <span class="footer-tag">© <span id="year"></span> · Where tennis transcends into community.</span>
     </div>
   </footer>
 

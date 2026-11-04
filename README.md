@@ -30,19 +30,25 @@ Add an object to `public/events.js`. Events with a date before today automatical
 
 ## Deploy to Google Cloud
 
-### Option A: Cloud Run (recommended)
+Live at **https://bktennisclub.com** (also `www.`), served by Cloud Run service
+`bktennisclub` in project `tennis-club-512223`, region `us-east1`.
+
+### Option A: Cloud Run (current setup)
 
 ```sh
-gcloud config set project YOUR_PROJECT_ID
 gcloud run deploy bktennisclub \
   --source . \
+  --project tennis-club-512223 \
   --region us-east1 \
   --allow-unauthenticated
 ```
 
-Cloud Build builds the `Dockerfile` and Cloud Run serves it. Map a custom domain with
-`gcloud beta run domain-mappings create --service bktennisclub --domain YOURDOMAIN`
-or put it behind a load balancer.
+Cloud Build builds the `Dockerfile` and Cloud Run serves it.
+
+Domain: registered through Cloud Domains in the same project, DNS in the
+Cloud DNS zone `bktennisclub-com`. Both `bktennisclub.com` and
+`www.bktennisclub.com` are Cloud Run domain mappings; the A/AAAA records and
+the `www` CNAME (`ghs.googlehosted.com.`) live in that zone.
 
 ### Option B: Cloud Storage static bucket
 

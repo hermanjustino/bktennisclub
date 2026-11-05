@@ -31,7 +31,7 @@ test/              node:test suite
 
 ```sh
 npm install
-npm run dev        # http://localhost:8080, in-memory data, simulated texts
+npm run dev        # http://localhost:8080, in-memory data, manual sending mode
 npm test
 ```
 

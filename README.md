@@ -5,8 +5,8 @@ Website for [@bktennisclub](https://www.instagram.com/bktennisclub/), a free, be
 Live at **https://bktennisclub.com**.
 
 - **Public site**: static pages in `public/`, styled with the "Clubhouse Checkers" design.
-- **Text sign-ups**: people join SMS groups from the homepage form and confirm by replying YES.
-- **Admin** (`/admin`): sign in with Google to send text blasts to groups, manage contacts and groups, and see history and replies.
+- **Text sign-ups**: people join SMS groups from the homepage form.
+- **Admin** (`/admin`): sign in with Google to send texts to groups (from your own phone, or through Twilio once it's set up), and manage contacts and groups.
 
 ## Structure
 
@@ -21,8 +21,8 @@ server/
   app.js           Express app: static files, /api, /api/admin, /webhooks/twilio
   routes/          public sign-up API, admin API, Twilio webhooks
   store/           Firestore (production) and in-memory (local/tests) data stores
-  sms.js           Twilio sender, or a simulated one when Twilio isn't configured
-  blast.js         sends a blast to every subscribed member of the chosen groups
+  sms.js           Twilio sender (disabled in manual mode)
+  blast.js         Twilio blasts, and manual send lists
   lib/             phone parsing, SMS segment counting, keywords, message copy
 test/              node:test suite
 ```
@@ -35,24 +35,31 @@ npm run dev        # http://localhost:8080, in-memory data, simulated texts
 npm test
 ```
 
-`npm run dev` sets `DEV_ADMIN_EMAIL`, which adds a "Continue as local dev" button
+Locally the site runs in manual mode. `npm run dev` sets `DEV_ADMIN_EMAIL`, which adds a "Continue as local dev" button
 on `/admin` so you can skip Google sign-in. That shortcut is ignored on Cloud Run.
 
 ## How texting works
 
-1. Someone fills in the homepage form (name, US mobile, groups, consent checkbox).
-   They're saved as **pending** with a consent record (wording, time, IP).
-2. We text them "Reply YES to confirm". Replying YES makes them **subscribed**.
-3. Blasts go to subscribed members of the chosen groups. `{first_name}` is filled in
-   per person, and "Reply STOP to opt out" is appended unless unticked.
-4. STOP/START/HELP replies are handled by Twilio's opt-out management and recorded
-   here (STOP → **unsubscribed**). Admins can stop texting someone but can't opt
-   them back in; only the person can, by texting START.
-5. Delivery receipts update each blast's delivered/failed counts. All replies show
-   in the admin's Replies tab.
+There are two modes. The site picks automatically: **manual** until Twilio
+credentials are set, then **Twilio**.
 
-Until Twilio is configured, every send is **simulated**: logged and recorded in
-History, but nothing leaves the server. The admin page shows a banner.
+**Manual mode (current).** For a small list, texts go out from an organizer's own phone.
+1. Someone signs up on the homepage (name, US mobile, groups, consent checkbox) and
+   is **subscribed** right away, with a consent record (wording, time, IP).
+2. In `/admin` → Send, write the message, pick groups, and hit **Prepare texts**.
+3. On your phone, tap each person's **Text** button: Messages opens with their number
+   and personalized text filled in. Send, come back, tap the next. Ticks are saved,
+   so History → Continue picks up where you left off.
+4. If someone replies STOP to your phone, click **Stop texts** on them in Contacts.
+
+**Twilio mode.** Same admin, but sending is automatic.
+1. Sign-ups are **pending** until they reply YES to a confirmation text.
+2. Blasts go straight out through Twilio to subscribed members of the chosen groups.
+3. STOP/START/HELP replies are handled by Twilio's opt-out management and recorded
+   here. All replies show in the Replies tab, and delivery receipts update each blast.
+
+In both modes `{first_name}` is filled in per person, and "Reply STOP to opt out" is
+appended unless unticked. Admins can stop texting someone but can't opt them back in.
 
 ## Configuration (Cloud Run environment)
 
@@ -86,7 +93,7 @@ Data lives in Firestore (Native mode, database `(default)`) in project
    approve in roughly 1–3 weeks; US texts are blocked until then.
 4. Optional: in the Messaging Service's Advanced Opt-Out, set the HELP reply to the
    text in `server/lib/sms-text.js` (`messages.help`).
-5. Add the credentials (see Deploy) and redeploy. The admin banner disappears.
+5. Add the credentials (see Deploy) and redeploy. The admin switches to Twilio mode.
 
 ## Deploy
 

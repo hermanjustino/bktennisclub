@@ -1,8 +1,8 @@
-const crypto = require("node:crypto");
 const twilio = require("twilio");
 
 // Sends texts through a Twilio Messaging Service. Without Twilio credentials the
-// sender runs in simulated mode: nothing leaves the server, messages are logged.
+// site runs in manual mode: admins send each text from their own phone, and
+// nothing calls send().
 function createSender(config) {
   const statusCallback = config.publicBaseUrl.startsWith("https://")
     ? `${config.publicBaseUrl}/webhooks/twilio/status`
@@ -11,9 +11,8 @@ function createSender(config) {
   if (!config.smsEnabled) {
     return {
       enabled: false,
-      async send(to, body) {
-        console.log(`[sms:simulated] to=${to} ${JSON.stringify(body)}`);
-        return { sid: `SIM${crypto.randomBytes(12).toString("hex")}`, status: "simulated" };
+      async send() {
+        throw new Error("Twilio isn't configured");
       },
     };
   }

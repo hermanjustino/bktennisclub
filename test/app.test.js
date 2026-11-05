@@ -7,7 +7,7 @@ const { createMemoryStore } = require("../server/store/memory");
 const AUTH_TOKEN = "test-auth-token";
 const PHONE = "+17185550123";
 
-async function setup() {
+async function setup({ smsEnabled = true } = {}) {
   const config = {
     publicBaseUrl: "https://bktennisclub.test",
     googleClientId: "",
@@ -19,8 +19,9 @@ async function setup() {
   const sent = [];
   let nextSid = 1;
   const sender = {
-    enabled: true,
+    enabled: smsEnabled,
     async send(to, body) {
+      if (!smsEnabled) throw new Error("Twilio isn't configured");
       const sid = `SM${nextSid++}`;
       sent.push({ to, body, sid });
       return { sid, status: "queued" };
@@ -155,4 +156,50 @@ test("deleting a group removes it from contacts", async (t) => {
   await app.store.saveContact(PHONE, { name: "Ann", status: "subscribed", groups: [app.friday.id, app.secret.id] });
   await app.json(`/api/admin/groups/${app.secret.id}`, { method: "DELETE", admin: true });
   assert.deepEqual((await app.store.getContact(PHONE)).groups, [app.friday.id]);
+});
+
+test("manual mode: sign-ups join right away and blasts become a send list", async (t) => {
+  const app = await setup({ smsEnabled: false });
+  t.after(app.close);
+
+  const signup = await app.json("/api/signup", {
+    method: "POST",
+    body: { name: "Ann Smith", phone: "718-555-0123", groupIds: [app.friday.id], consent: true },
+  });
+  assert.equal(signup.body.status, "subscribed");
+  assert.equal(app.sent.length, 0, "nothing is texted automatically");
+  await app.store.saveContact("+13475550188", { name: "Opted Out", status: "unsubscribed", groups: [app.friday.id] });
+
+  const blast = await app.json("/api/admin/blasts", {
+    method: "POST",
+    body: { body: "Hi {first_name}! Courts at 7", groupIds: [app.friday.id], addFooter: true },
+    admin: true,
+  });
+  assert.equal(blast.status, 201);
+  assert.equal(blast.body.mode, "manual");
+  assert.deepEqual(blast.body.list, [{ phone: PHONE, name: "Ann Smith", text: "Hi Ann! Courts at 7\nReply STOP to opt out" }]);
+  assert.equal(blast.body.status, "in_progress");
+
+  const marked = await app.json(`/api/admin/blasts/${blast.body.id}/sent`, { method: "POST", body: { phone: PHONE }, admin: true });
+  assert.deepEqual(marked.body.sentTo, [PHONE]);
+  assert.equal(marked.body.status, "done");
+
+  const stranger = await app.json(`/api/admin/blasts/${blast.body.id}/sent`, { method: "POST", body: { phone: "+12125550100" }, admin: true });
+  assert.equal(stranger.status, 404, "can only tick people on the list");
+
+  const unmarked = await app.json(`/api/admin/blasts/${blast.body.id}/sent`, { method: "POST", body: { phone: PHONE, sent: false }, admin: true });
+  assert.equal(unmarked.body.status, "in_progress");
+
+  const reopened = await app.json(`/api/admin/blasts/${blast.body.id}`, { admin: true });
+  assert.deepEqual(reopened.body.sentTo, []);
+
+  const test = await app.json("/api/admin/blasts/test", { method: "POST", body: { phone: PHONE, body: "hi" }, admin: true });
+  assert.equal(test.status, 409);
+});
+
+test("manual mode: webhooks are disabled", async (t) => {
+  const app = await setup({ smsEnabled: false });
+  t.after(app.close);
+  const res = await app.webhook("/webhooks/twilio/inbound", { From: PHONE, Body: "YES" });
+  assert.equal(res.status, 404);
 });

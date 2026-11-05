@@ -73,6 +73,18 @@ function createMemoryStore() {
         .map(clone);
     },
 
+    // Manual blasts: tick a person off (or back on) the send list.
+    async markManualSent(id, phone, sent) {
+      const blast = blasts.get(id);
+      if (!blast || blast.mode !== "manual" || !blast.list.some((r) => r.phone === phone)) return null;
+      const sentTo = new Set(blast.sentTo || []);
+      if (sent) sentTo.add(phone);
+      else sentTo.delete(phone);
+      blast.sentTo = [...sentTo];
+      blast.status = sentTo.size >= blast.list.length ? "done" : "in_progress";
+      return clone(blast);
+    },
+
     async saveMessage(sid, data) {
       messages.set(sid, { ...data, sid });
     },

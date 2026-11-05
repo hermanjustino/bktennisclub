@@ -2,7 +2,7 @@
   const { countSegments, personalize, STOP_FOOTER } = window.SmsText;
   const TOKEN_KEY = "bk_admin_token";
 
-  const state = { token: null, dev: false, me: null, summary: null, contacts: null, tab: "send" };
+  const state = { token: null, dev: false, me: null, summary: null, contacts: null, tab: "send", openBlastId: null };
   try {
     state.token = sessionStorage.getItem(TOKEN_KEY);
   } catch {}
@@ -33,6 +33,19 @@
   const formatDate = (iso) =>
     iso ? new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
   const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+  // iOS wants sms:NUMBER&body=..., everyone else sms:NUMBER?body=...
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const smsHref = (phone, text) => `sms:${phone}${isIOS ? "&" : "?"}body=${encodeURIComponent(text)}`;
+
+  async function copy(text, done) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast(done);
+    } catch {
+      toast("Couldn't copy. Your browser blocked the clipboard.", true);
+    }
+  }
 
   let toastTimer;
   function toast(text, isError) {
@@ -133,6 +146,8 @@
     $("account").hidden = false;
     $("account-email").textContent = state.me.email;
     $("sms-banner").hidden = state.me.smsEnabled;
+    // Replies only arrive through Twilio; in manual mode they land on your phone.
+    document.querySelector('[data-tab="replies"]').hidden = !state.me.smsEnabled;
     await refreshSummary();
     showTab(state.tab);
   }
@@ -175,13 +190,19 @@
 
   // Send
   async function renderSend(panel) {
+    if (state.openBlastId) {
+      const id = state.openBlastId;
+      state.openBlastId = null;
+      return renderManualList(panel, await api(`/blasts/${encodeURIComponent(id)}`));
+    }
+    const manual = !state.me.smsEnabled;
     const body = h("textarea", { class: "admin-input", id: "blast-body", maxlength: "1600", placeholder: "Hey {first_name}! Courts 3 & 4 tonight at 7. See you there." });
     const footer = h("input", { type: "checkbox", checked: true });
     const counter = h("div", { class: "counter" });
     const bubble = h("div", { class: "bubble" });
     const groups = h("div", { class: "group-options" }, groupCheckboxes("blast-groups", [], true));
     const testPhone = h("input", { class: "admin-input", type: "tel", placeholder: "Your mobile number", autocomplete: "tel" });
-    const sendBtn = h("button", { type: "button", class: "btn btn-lg btn-ink" }, "Send blast");
+    const sendBtn = h("button", { type: "button", class: "btn btn-lg btn-ink" }, manual ? "Prepare texts" : "Send blast");
     const testBtn = h("button", { type: "button", class: "btn" }, "Send test");
     let recipients = 0;
 
@@ -217,10 +238,11 @@
         if (!body.value.trim()) throw new Error("Write a message first.");
         if (!groupIds.length) throw new Error("Pick at least one group.");
         if (recipients === 0) throw new Error("Nobody in those groups is subscribed yet.");
-        const verb = state.me.smsEnabled ? "Send" : "Simulate sending";
-        if (!confirm(`${verb} this message to ${plural(recipients, "person")}?`)) return;
-        const blast = await api("/blasts", { method: "POST", body: { body: body.value.trim(), groupIds, addFooter: footer.checked } });
-        toast(`${blast.simulated ? "Simulated" : "Sent"}: ${blast.accepted} accepted${blast.rejected ? `, ${blast.rejected} failed` : ""}.`, blast.rejected > 0);
+        const payload = { body: body.value.trim(), groupIds, addFooter: footer.checked };
+        if (manual) return renderManualList(panel, await api("/blasts", { method: "POST", body: payload }));
+        if (!confirm(`Send this message to ${plural(recipients, "person")}?`)) return;
+        const blast = await api("/blasts", { method: "POST", body: payload });
+        toast(`Sent: ${blast.accepted} accepted${blast.rejected ? `, ${blast.rejected} failed` : ""}.`, blast.rejected > 0);
         body.value = "";
         update();
       })
@@ -229,7 +251,7 @@
     testBtn.addEventListener("click", () =>
       withButton(testBtn, async () => {
         const result = await api("/blasts/test", { method: "POST", body: { phone: testPhone.value, body: fullText() } });
-        toast(result.simulated ? "Test simulated (Twilio not connected)." : "Test sent. Check your phone.");
+        toast("Test sent. Check your phone.");
       })
     );
 
@@ -256,17 +278,98 @@
             "div",
             { style: "display:flex;flex-direction:column;gap:16px" },
             h("div", { class: "phone-preview" }, bubble, h("p", {}, "Preview, as “Alex” would see it")),
-            h(
-              "div",
-              { class: "field-inline" },
-              h("label", { class: "field" }, h("span", {}, "Test it on your phone first"), testPhone),
-              testBtn
-            )
+            manual
+              ? h("p", { class: "hint" }, "Next you'll get a list with a Text button for each person. Each one opens Messages with their personalized text ready to send.")
+              : h(
+                  "div",
+                  { class: "field-inline" },
+                  h("label", { class: "field" }, h("span", {}, "Test it on your phone first"), testPhone),
+                  testBtn
+                )
           )
         )
       )
     );
     update();
+  }
+
+  // Manual mode: one row per person with a Text button that opens Messages
+  // pre-filled. Ticks are saved on the server, so the list survives a reload.
+  function renderManualList(panel, blast) {
+    const sent = new Set(blast.sentTo || []);
+    const progress = h("p", { class: "progress-line" });
+    const rows = blast.list.map((r) => {
+      const box = h("input", { type: "checkbox", "aria-label": `Mark ${r.name || formatPhone(r.phone)} as sent` });
+      const link = h("a", { class: "btn btn-accent", href: smsHref(r.phone, r.text) }, "Text");
+      const row = h(
+        "li",
+        { class: "send-row" },
+        h("div", { class: "send-who" }, h("strong", {}, r.name || formatPhone(r.phone)), h("span", {}, formatPhone(r.phone))),
+        h("label", { class: "check" }, box, "Sent"),
+        link
+      );
+      box.addEventListener("change", () => mark(r.phone, box.checked));
+      link.addEventListener("click", () => mark(r.phone, true));
+      return { row, box, phone: r.phone };
+    });
+
+    function sync() {
+      rows.forEach((x) => {
+        x.box.checked = sent.has(x.phone);
+        x.row.classList.toggle("done", sent.has(x.phone));
+      });
+      const all = blast.list.length;
+      progress.textContent = `${sent.size} of ${all} sent${all && sent.size === all ? ". All done!" : ""}`;
+    }
+
+    async function mark(phone, value) {
+      if (value) sent.add(phone);
+      else sent.delete(phone);
+      sync();
+      try {
+        const updated = await api(`/blasts/${encodeURIComponent(blast.id)}/sent`, { method: "POST", body: { phone, sent: value } });
+        sent.clear();
+        (updated.sentTo || []).forEach((p) => sent.add(p));
+      } catch (err) {
+        toast(err.message, true);
+      }
+      sync();
+    }
+
+    const personalized = /\{(first_)?name\}/i.test(blast.body);
+    panel.replaceChildren(
+      h(
+        "div",
+        { class: "box" },
+        h("h2", {}, "Send from your phone"),
+        h(
+          "p",
+          {},
+          "Tap Text to open Messages with the number and message filled in. Send it, come back, and tap the next one. Your progress saves automatically."
+        ),
+        h("div", { class: "bubble" }, blast.body),
+        progress,
+        blast.list.length
+          ? h("ol", { class: "send-list" }, rows.map((x) => x.row))
+          : h("p", { class: "empty-state" }, "Nobody in those groups is subscribed yet."),
+        h(
+          "div",
+          { class: "btn-group" },
+          h("button", { type: "button", class: "btn", onclick: () => copy(blast.list.map((r) => r.phone).join(", "), "Numbers copied.") }, "Copy all numbers"),
+          h(
+            "button",
+            {
+              type: "button",
+              class: "btn",
+              onclick: () => copy(blast.body, personalized ? "Copied. It still has {first_name} in it, so the Text buttons are better." : "Message copied."),
+            },
+            "Copy message"
+          ),
+          h("button", { type: "button", class: "btn btn-ink", onclick: () => renderSend(panel) }, "Write a new message")
+        )
+      )
+    );
+    sync();
   }
 
   // Contacts
@@ -428,6 +531,9 @@
         { class: "box" },
         h("div", { class: "filters" }, search, groupFilter, statusFilter),
         pending && state.me.smsEnabled ? h("div", {}, confirmBtn) : null,
+        state.me.smsEnabled
+          ? null
+          : h("p", { class: "hint" }, "Someone replied STOP to your texts? Click “Stop texts” next to their name so they're left off future lists."),
         countLine,
         h(
           "div",
@@ -555,7 +661,7 @@
           h(
             "thead",
             {},
-            h("tr", {}, ["Sent", "Message", "Groups", "Recipients", "Accepted", "Delivered", "Failed", "Status", "By"].map((t) => h("th", { scope: "col" }, t)))
+            h("tr", {}, ["Created", "Message", "Groups", "Recipients", "Progress", "Status", "By", ""].map((t) => h("th", { scope: "col" }, t)))
           ),
           h(
             "tbody",
@@ -568,11 +674,33 @@
                 h("td", {}, h("div", { class: "msg" }, b.body)),
                 h("td", {}, (b.groupNames || []).join(", ")),
                 h("td", { class: "num" }, b.recipients),
-                h("td", { class: "num" }, b.accepted),
-                h("td", { class: "num" }, b.simulated ? "—" : b.delivered || 0),
-                h("td", { class: "num" }, (b.rejected || 0) + (b.failed || 0)),
-                h("td", {}, h("span", { class: `tag ${b.simulated ? "simulated" : b.status}` }, b.simulated ? "simulated" : b.status)),
-                h("td", {}, b.createdBy)
+                h(
+                  "td",
+                  {},
+                  b.mode === "manual"
+                    ? `${(b.sentTo || []).length} of ${b.recipients} texted`
+                    : `${b.accepted} accepted · ${b.delivered || 0} delivered · ${(b.rejected || 0) + (b.failed || 0)} failed`
+                ),
+                h("td", {}, h("span", { class: `tag ${b.status}` }, b.status === "in_progress" ? "in progress" : b.status)),
+                h("td", {}, b.createdBy),
+                h(
+                  "td",
+                  {},
+                  b.mode === "manual" && b.recipients
+                    ? h(
+                        "button",
+                        {
+                          type: "button",
+                          class: "link-btn",
+                          onclick: () => {
+                            state.openBlastId = b.id;
+                            showTab("send");
+                          },
+                        },
+                        b.status === "done" ? "Open" : "Continue"
+                      )
+                    : null
+                )
               )
             )
           )

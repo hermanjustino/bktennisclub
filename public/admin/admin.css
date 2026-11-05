@@ -86,7 +86,21 @@ td .msg { max-width: 360px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .tag.subscribed, .tag.sent { background: var(--accent); }
 .tag.pending, .tag.partial { background: var(--cream); }
 .tag.unsubscribed, .tag.failed { background: var(--ink); color: var(--cream); }
-.tag.simulated { background: var(--card-muted); border-style: dashed; }
+.tag.done { background: var(--accent); }
+.tag.in_progress { background: var(--cream); border-style: dashed; }
+
+.progress-line { font-family: var(--font-display); font-weight: 800; font-size: 22px; }
+.send-list { list-style: none; margin: 0; padding: 0; border: var(--rule); border-radius: var(--radius); background: var(--cream); }
+.send-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 14px 18px;
+  border-bottom: 1px solid var(--cream-dim);
+}
+.send-row:last-child { border-bottom: 0; }
+.send-row.done { background: var(--card-muted); }
+.send-row.done .send-who { text-decoration: line-through; opacity: .7; }
+.send-who { flex: 1 1 180px; min-width: 0; display: flex; flex-direction: column; }
+.send-who span { font-size: 14px; color: var(--brown); }
+.send-row .btn { min-width: 96px; }
 
 .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .filters .admin-input { width: auto; flex: 1 1 180px; min-height: 44px; font-size: 15px; }

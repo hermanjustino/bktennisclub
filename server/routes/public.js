@@ -73,11 +73,21 @@ function publicRoutes({ config, store, sender }) {
       return res.json({ status: "subscribed", message: "You're already on the list. We've added any new groups you picked." });
     }
 
-    await store.saveContact(e164, { name: cleanName, groups: groupIdsMerged, status: "pending", consent: consentRecord });
-
     if (!sender.enabled) {
-      return res.json({ status: "pending", message: "Thanks! We'll text you to confirm soon." });
+      await store.saveContact(e164, {
+        name: cleanName,
+        groups: groupIdsMerged,
+        status: "subscribed",
+        consent: consentRecord,
+        subscribedAt: consentRecord.at,
+      });
+      return res.json({
+        status: "subscribed",
+        message: "You're on the list! Texts come from a club organizer's phone, so save the number when the first one arrives.",
+      });
     }
+
+    await store.saveContact(e164, { name: cleanName, groups: groupIdsMerged, status: "pending", consent: consentRecord });
 
     const lastSent = existing && existing.confirmationSentAt ? Date.parse(existing.confirmationSentAt) : 0;
     if (Date.now() - lastSent > CONFIRM_RESEND_MS) {

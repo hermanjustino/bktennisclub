@@ -86,6 +86,22 @@ function createFirestoreStore() {
       return snap.docs.map(data);
     },
 
+    // Manual blasts: tick a person off (or back on) the send list.
+    async markManualSent(id, phone, sent) {
+      const ref = db.collection("blasts").doc(id);
+      return db.runTransaction(async (tx) => {
+        const doc = await tx.get(ref);
+        const blast = doc.exists ? doc.data() : null;
+        if (!blast || blast.mode !== "manual" || !blast.list.some((r) => r.phone === phone)) return null;
+        const sentTo = new Set(blast.sentTo || []);
+        if (sent) sentTo.add(phone);
+        else sentTo.delete(phone);
+        const patch = { sentTo: [...sentTo], status: sentTo.size >= blast.list.length ? "done" : "in_progress" };
+        tx.update(ref, patch);
+        return { ...blast, ...patch, id };
+      });
+    },
+
     async saveMessage(sid, fields) {
       await db.collection("messages").doc(sid).set({ ...fields, sid });
     },

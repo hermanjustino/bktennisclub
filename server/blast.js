@@ -28,7 +28,7 @@ async function sendBlast({ store, sender, body, groupIds, addFooter, createdBy }
     groupIds,
     groupNames: groups.filter((g) => groupIds.includes(g.id)).map((g) => g.name),
     createdBy,
-    simulated: !sender.enabled,
+    mode: "twilio",
     status: "sending",
     recipients: recipients.length,
     accepted: 0,
@@ -57,4 +57,27 @@ async function sendBlast({ store, sender, body, groupIds, addFooter, createdBy }
   return store.updateBlast(blast.id, { status, accepted, rejected, errors, finishedAt: new Date().toISOString() });
 }
 
-module.exports = { sendBlast, recipientsFor };
+// Manual mode: build the list of personalized texts for the admin to send from
+// their own phone. sentTo tracks progress so they can stop and pick up later.
+async function prepareManualBlast({ store, body, groupIds, addFooter, createdBy }) {
+  const [contacts, groups] = await Promise.all([store.listContacts(), store.listGroups()]);
+  const template = addFooter ? body + STOP_FOOTER : body;
+  const list = recipientsFor(contacts, groupIds).map((c) => ({
+    phone: c.phone,
+    name: c.name || "",
+    text: personalize(template, c),
+  }));
+  return store.createBlast({
+    body: template,
+    groupIds,
+    groupNames: groups.filter((g) => groupIds.includes(g.id)).map((g) => g.name),
+    createdBy,
+    mode: "manual",
+    status: list.length ? "in_progress" : "done",
+    recipients: list.length,
+    list,
+    sentTo: [],
+  });
+}
+
+module.exports = { sendBlast, prepareManualBlast, recipientsFor };

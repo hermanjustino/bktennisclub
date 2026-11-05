@@ -1,7 +1,7 @@
 const express = require("express");
 const { normalizeUSPhone } = require("../lib/phone");
 const { messages, personalize } = require("../lib/sms-text");
-const { sendBlast, recipientsFor } = require("../blast");
+const { sendBlast, prepareManualBlast, recipientsFor } = require("../blast");
 
 const MAX_BODY = 1600; // Twilio's limit for a single (multi-segment) message
 const ADMIN_ATTEST_TEXT = "Admin confirmed this person gave permission to receive texts.";
@@ -79,7 +79,7 @@ function adminRoutes({ store, sender, requireAdmin }) {
 
     const existing = await store.getContact(e164);
     if (existing && existing.status === "unsubscribed") {
-      return res.status(409).json({ error: "This number opted out. They need to text START to rejoin." });
+      return res.status(409).json({ error: "This number opted out. They can rejoin by signing up on the website." });
     }
     const contact = await store.saveContact(e164, {
       name: String(name || "").trim().slice(0, 80) || (existing && existing.name) || "",
@@ -140,18 +140,19 @@ function adminRoutes({ store, sender, requireAdmin }) {
     const groupIds = await validGroupIds(req.body.groupIds);
     if (groupIds.length === 0) return res.status(400).json({ error: "Pick at least one group." });
 
-    const blast = await sendBlast({
-      store,
-      sender,
-      body,
-      groupIds,
-      addFooter: req.body.addFooter !== false,
-      createdBy: req.admin.email,
-    });
+    const options = { store, sender, body, groupIds, addFooter: req.body.addFooter !== false, createdBy: req.admin.email };
+    const blast = sender.enabled ? await sendBlast(options) : await prepareManualBlast(options);
     res.status(201).json(blast);
   }));
 
+  router.post("/blasts/:id/sent", asyncRoute(async (req, res) => {
+    const blast = await store.markManualSent(req.params.id, String(req.body.phone || ""), req.body.sent !== false);
+    if (!blast) return res.status(404).json({ error: "That person isn't on this list." });
+    res.json(blast);
+  }));
+
   router.post("/blasts/test", asyncRoute(async (req, res) => {
+    if (!sender.enabled) return res.status(409).json({ error: "Test sends need Twilio. In manual mode, text yourself from the list." });
     const e164 = normalizeUSPhone(req.body && req.body.phone);
     if (!e164) return res.status(400).json({ error: "Enter a valid US mobile number for the test." });
     const body = String((req.body && req.body.body) || "").trim();
@@ -159,7 +160,7 @@ function adminRoutes({ store, sender, requireAdmin }) {
     const text = personalize(body, { name: req.admin.name });
     try {
       const { sid, status } = await sender.send(e164, text);
-      res.json({ sid, status, simulated: !sender.enabled });
+      res.json({ sid, status });
     } catch (err) {
       res.status(502).json({ error: `Twilio rejected the test: ${err.message}` });
     }
@@ -167,6 +168,12 @@ function adminRoutes({ store, sender, requireAdmin }) {
 
   router.get("/blasts", asyncRoute(async (req, res) => {
     res.json(await store.listBlasts(50));
+  }));
+
+  router.get("/blasts/:id", asyncRoute(async (req, res) => {
+    const blast = await store.getBlast(req.params.id);
+    if (!blast) return res.status(404).json({ error: "Blast not found." });
+    res.json(blast);
   }));
 
   router.get("/inbox", asyncRoute(async (req, res) => {

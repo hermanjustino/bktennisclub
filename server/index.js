@@ -26,7 +26,7 @@ async function main() {
 
   createApp({ config, store, sender }).listen(config.port, () => {
     console.log(
-      `BK Tennis Club on :${config.port} (store=${store.kind}, sms=${sender.enabled ? "twilio" : "simulated"}, ` +
+      `BK Tennis Club on :${config.port} (store=${store.kind}, sms=${sender.enabled ? "twilio" : "manual"}, ` +
         `admins=${config.adminEmails.length}${config.devAdminEmail ? ", dev auth ON" : ""})`
     );
   });

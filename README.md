@@ -6,7 +6,7 @@ Live at **https://bktennisclub.com**.
 
 - **Public site**: static pages in `public/`, styled with the "Clubhouse Checkers" design.
 - **Text sign-ups**: people join SMS groups from the homepage form.
-- **Admin** (`/admin`): sign in with Google to send texts to groups (from your own phone, or through Twilio once it's set up), and manage contacts and groups.
+- **Admin** (`/admin`): sign in with an emailed link to send texts to groups (from your own phone, or through Twilio once it's set up), and manage contacts and groups.
 
 ## Structure
 
@@ -66,8 +66,8 @@ appended unless unticked. Admins can stop texting someone but can't opt them bac
 | Variable | What it is |
 | --- | --- |
 | `PUBLIC_BASE_URL` | `https://bktennisclub.com`. Used for Twilio webhook URLs and signature checks |
-| `GOOGLE_CLIENT_ID` | OAuth **Web client** ID used by the admin Google sign-in |
-| `ADMIN_EMAILS` | Comma-separated Google accounts allowed into `/admin` |
+| `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_APP_ID` | Firebase web app config for the admin's email-link sign-in (public values) |
+| `ADMIN_EMAILS` | Comma-separated emails allowed into `/admin` |
 | `TWILIO_ACCOUNT_SID` | Twilio account SID |
 | `TWILIO_AUTH_TOKEN` | Twilio auth token. Stored in Secret Manager as `twilio-auth-token` |
 | `TWILIO_MESSAGING_SERVICE_SID` | The Messaging Service (`MG…`) that holds the club's number |
@@ -77,11 +77,16 @@ Data lives in Firestore (Native mode, database `(default)`) in project
 
 ## One-time setup
 
-### Admin sign-in (Google)
-1. Cloud Console → APIs & Services → **OAuth consent screen**: set it up (External, app name "BK Tennis Club Admin").
-2. **Credentials → Create credentials → OAuth client ID → Web application**.
-   Authorized JavaScript origins: `https://bktennisclub.com`, `https://www.bktennisclub.com`, `http://localhost:8080`.
-3. Put the client ID in `GOOGLE_CLIENT_ID` and redeploy.
+### Admin sign-in (email links)
+Admins type their email on `/admin` and get a one-time sign-in link (Firebase
+Authentication, which also sends the email). Anyone can request a link, but only
+emails in `ADMIN_EMAILS` get past the server.
+
+Firebase console (project `tennis-club-512223`) → **Authentication**:
+1. **Sign-in method → Email/Password**: enable it, and enable **Email link (passwordless sign-in)**.
+2. **Settings → Authorized domains**: `bktennisclub.com` and `www.bktennisclub.com`.
+
+To add an admin, add their email to `ADMIN_EMAILS` (see Deploy).
 
 ### Twilio
 1. Create a Twilio account and buy a US local number.
@@ -106,7 +111,7 @@ Environment variables and secrets are kept on the service between deploys. To ch
 
 ```sh
 gcloud run services update bktennisclub --project tennis-club-512223 --region us-east1 \
-  --update-env-vars GOOGLE_CLIENT_ID=...,ADMIN_EMAILS=a@x.com,b@y.com
+  --update-env-vars '^##^ADMIN_EMAILS=a@x.com,b@y.com'
 
 # Twilio
 printf %s "$TWILIO_AUTH_TOKEN" | gcloud secrets versions add twilio-auth-token --data-file=- --project tennis-club-512223

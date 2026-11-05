@@ -1,11 +1,26 @@
 (function () {
   const { countSegments, personalize, STOP_FOOTER } = window.SmsText;
-  const TOKEN_KEY = "bk_admin_token";
+  const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/12.6.0";
+  const EMAIL_KEY = "bk_admin_signin_email";
 
-  const state = { token: null, dev: false, me: null, summary: null, contacts: null, tab: "send", openBlastId: null };
-  try {
-    state.token = sessionStorage.getItem(TOKEN_KEY);
-  } catch {}
+  const state = { dev: false, me: null, summary: null, contacts: null, tab: "send", openBlastId: null, signInError: "" };
+  let fb = null; // Firebase Auth module functions plus the auth instance
+
+  const storage = {
+    get: (key) => {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    set: (key, value) => {
+      try {
+        if (value === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      } catch {}
+    },
+  };
 
   const $ = (id) => document.getElementById(id);
 
@@ -62,7 +77,8 @@
     const headers = {};
     if (options.body !== undefined) headers["Content-Type"] = "application/json";
     if (state.dev) headers["x-dev-admin"] = "1";
-    else if (state.token) headers.Authorization = `Bearer ${state.token}`;
+    // getIdToken() returns a cached token and refreshes it when it's near expiry.
+    else if (fb && fb.auth.currentUser) headers.Authorization = `Bearer ${await fb.auth.currentUser.getIdToken()}`;
     const res = await fetch(`/api/admin${path}`, {
       method: options.method || "GET",
       headers,
@@ -90,49 +106,70 @@
     }
   }
 
-  // Sign-in
+  // Sign-in: Firebase email links. Enter your email, open the link we send, done.
   let config = null;
 
   function showSignIn(error) {
     $("app").hidden = true;
     $("account").hidden = true;
     $("signin").hidden = false;
+    $("signin-sent").hidden = true;
+    $("signin-form").hidden = !config.firebase;
     $("signin-error").textContent = error || "";
     if (config.devAuth) $("dev-signin").hidden = false;
-    if (config.googleClientId) renderGoogleButton();
-    else if (!config.devAuth) $("signin-error").textContent = "Google sign-in isn't configured yet (GOOGLE_CLIENT_ID).";
+    if (!config.firebase && !config.devAuth) $("signin-error").textContent = "Sign-in isn't configured yet.";
   }
 
-  function renderGoogleButton() {
-    const draw = () => {
-      google.accounts.id.initialize({
-        client_id: config.googleClientId,
-        callback: (response) => {
-          state.token = response.credential;
-          try {
-            sessionStorage.setItem(TOKEN_KEY, state.token);
-          } catch {}
-          start();
-        },
-      });
-      google.accounts.id.renderButton($("gsi-button"), { theme: "outline", size: "large", text: "signin_with" });
-    };
-    if (window.google && google.accounts) return draw();
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.onload = draw;
-    document.head.append(script);
+  async function loadFirebase() {
+    const [{ initializeApp }, authModule] = await Promise.all([
+      import(`${FIREBASE_SDK}/firebase-app.js`),
+      import(`${FIREBASE_SDK}/firebase-auth.js`),
+    ]);
+    fb = { ...authModule, auth: authModule.getAuth(initializeApp(config.firebase)) };
   }
 
-  function signOut(error) {
-    state.token = null;
-    state.dev = false;
+  // Coming back from the emailed link: finish signing in, then tidy the URL.
+  async function completeEmailLink() {
+    if (!fb.isSignInWithEmailLink(fb.auth, location.href)) return;
+    let email = storage.get(EMAIL_KEY);
+    // Opened on a different device than the one that asked for the link.
+    if (!email) email = window.prompt("Confirm your email to finish signing in");
     try {
-      sessionStorage.removeItem(TOKEN_KEY);
-    } catch {}
-    if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
-    showSignIn(error);
+      if (email) await fb.signInWithEmailLink(fb.auth, email.trim(), location.href);
+    } catch {
+      state.signInError = "That sign-in link has expired or was already used. Request a new one.";
+    }
+    storage.set(EMAIL_KEY, null);
+    history.replaceState(null, "", "/admin/");
+  }
+
+  async function sendLink(event) {
+    event.preventDefault();
+    const input = $("signin-email");
+    const button = $("signin-form").querySelector("button");
+    const email = input.value.trim();
+    if (!email) return ($("signin-error").textContent = "Enter your email.");
+    button.disabled = true;
+    $("signin-error").textContent = "";
+    try {
+      await fb.sendSignInLinkToEmail(fb.auth, email, { url: `${location.origin}/admin/`, handleCodeInApp: true });
+      storage.set(EMAIL_KEY, email);
+      $("signin-form").hidden = true;
+      $("signin-sent-email").textContent = email;
+      $("signin-sent").hidden = false;
+    } catch (err) {
+      $("signin-error").textContent =
+        err && err.code === "auth/invalid-email" ? "That email doesn't look right." : "Couldn't send the link. Try again in a minute.";
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function signOut(error) {
+    state.dev = false;
+    state.signInError = error || "";
+    if (fb && fb.auth.currentUser) await fb.signOut(fb.auth); // onAuthStateChanged shows the sign-in screen
+    else showSignIn(state.signInError);
   }
 
   async function start() {
@@ -741,17 +778,32 @@
   // Boot
   document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
   $("sign-out").addEventListener("click", () => signOut());
+  $("signin-form").addEventListener("submit", sendLink);
+  $("signin-retry").addEventListener("click", () => showSignIn());
   $("dev-signin").addEventListener("click", () => {
     state.dev = true;
     start();
   });
 
-  fetch("/api/config")
-    .then((r) => r.json())
-    .then((cfg) => {
-      config = cfg;
-      if (state.token) start();
-      else showSignIn();
-    })
-    .catch(() => toast("Couldn't reach the server.", true));
+  (async () => {
+    try {
+      config = await (await fetch("/api/config")).json();
+    } catch {
+      return toast("Couldn't reach the server.", true);
+    }
+    if (!config.firebase) return showSignIn();
+    try {
+      await loadFirebase();
+    } catch {
+      return showSignIn("Couldn't load sign-in. Check your connection and refresh.");
+    }
+    await completeEmailLink();
+    // Show the form straight away; a saved session swaps it for the dashboard.
+    if (!fb.auth.currentUser) showSignIn(state.signInError);
+    fb.onAuthStateChanged(fb.auth, (user) => {
+      if (user) return start();
+      showSignIn(state.signInError);
+      state.signInError = "";
+    });
+  })();
 })();

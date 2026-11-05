@@ -10,7 +10,7 @@ const PHONE = "+17185550123";
 async function setup({ smsEnabled = true } = {}) {
   const config = {
     publicBaseUrl: "https://bktennisclub.test",
-    googleClientId: "",
+    firebase: null,
     adminEmails: [],
     devAdminEmail: "admin@test",
     twilio: { authToken: AUTH_TOKEN },

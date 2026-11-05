@@ -31,8 +31,18 @@
     <section id="signin" class="container signin" hidden>
       <div class="panel">
         <h1>Admin sign-in</h1>
-        <p>Sign in with the Google account that's on the admin list.</p>
-        <div id="gsi-button"></div>
+        <form id="signin-form" class="signin-form" hidden>
+          <p>Enter your email and we'll send you a sign-in link. No password needed.</p>
+          <label class="field">
+            <span>Email</span>
+            <input id="signin-email" class="admin-input" type="email" autocomplete="email" required>
+          </label>
+          <button type="submit" class="btn btn-ink">Email me a sign-in link</button>
+        </form>
+        <div id="signin-sent" hidden>
+          <p><strong>Check your email.</strong> We sent a sign-in link to <span id="signin-sent-email"></span>. Open it on this device to finish signing in.</p>
+          <p class="hint">Not there after a minute? Check spam, or <button id="signin-retry" type="button" class="text-btn">send another link</button>.</p>
+        </div>
         <button id="dev-signin" type="button" class="btn btn-accent" hidden>Continue as local dev</button>
         <p id="signin-error" class="form-error" role="alert"></p>
       </div>

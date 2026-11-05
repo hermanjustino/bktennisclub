@@ -20,9 +20,18 @@ function loadConfig() {
     onCloudRun,
     clubName: "BK Tennis Club",
     publicBaseUrl: (env.PUBLIC_BASE_URL || `http://localhost:${port}`).replace(/\/$/, ""),
-    googleClientId: env.GOOGLE_CLIENT_ID || "",
+    // Firebase web config for the admin's email-link sign-in. These values are public
+    // (they ship to the browser); access is controlled by ADMIN_EMAILS.
+    firebase: env.FIREBASE_PROJECT_ID
+      ? {
+          apiKey: env.FIREBASE_API_KEY || "",
+          authDomain: env.FIREBASE_AUTH_DOMAIN || `${env.FIREBASE_PROJECT_ID}.firebaseapp.com`,
+          projectId: env.FIREBASE_PROJECT_ID,
+          appId: env.FIREBASE_APP_ID || "",
+        }
+      : null,
     adminEmails: list(env.ADMIN_EMAILS),
-    // Local-only shortcut that skips Google sign-in. Never honoured on Cloud Run.
+    // Local-only shortcut that skips sign-in. Never honoured on Cloud Run.
     devAdminEmail: onCloudRun ? "" : (env.DEV_ADMIN_EMAIL || "").toLowerCase(),
     store: env.STORE || (onCloudRun ? "firestore" : "memory"),
     twilio,

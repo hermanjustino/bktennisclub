@@ -33,7 +33,7 @@ function publicRoutes({ config, store, sender }) {
   const allow = createRateLimiter();
 
   router.get("/config", (req, res) => {
-    res.json({ googleClientId: config.googleClientId, devAuth: Boolean(config.devAdminEmail) });
+    res.json({ firebase: config.firebase, devAuth: Boolean(config.devAdminEmail) });
   });
 
   router.get("/groups", async (req, res) => {

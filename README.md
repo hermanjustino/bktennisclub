@@ -2,69 +2,121 @@
 
 Website for [@bktennisclub](https://www.instagram.com/bktennisclub/), a free, beginner-friendly tennis club: *where tennis transcends into community.*
 
-Plain static HTML/CSS/JS with no build step. The styling is a placeholder until the full design pass.
+Live at **https://bktennisclub.com**.
+
+- **Public site**: static pages in `public/`, styled with the "Clubhouse Checkers" design.
+- **Text sign-ups**: people join SMS groups from the homepage form and confirm by replying YES.
+- **Admin** (`/admin`): sign in with Google to send text blasts to groups, manage contacts and groups, and see history and replies.
 
 ## Structure
 
 ```
-public/
-  index.html   page content
-  styles.css   styles (colors/tokens at the top)
-  events.js    event list: edit this to add/remove events
-  main.js      nav toggle + renders events into Upcoming/Past
-Dockerfile     nginx image for Cloud Run
-nginx/         nginx config (listens on $PORT)
+public/            site pages, styles and scripts (served as-is)
+  admin/           the admin dashboard (HTML/CSS/JS)
+  events.js        event list: edit this to add/remove events
+  privacy.html     privacy policy   (required for carrier SMS approval)
+  terms.html       SMS terms        (required for carrier SMS approval)
+server/
+  index.js         entry point: picks the store and SMS sender, seeds starter groups
+  app.js           Express app: static files, /api, /api/admin, /webhooks/twilio
+  routes/          public sign-up API, admin API, Twilio webhooks
+  store/           Firestore (production) and in-memory (local/tests) data stores
+  sms.js           Twilio sender, or a simulated one when Twilio isn't configured
+  blast.js         sends a blast to every subscribed member of the chosen groups
+  lib/             phone parsing, SMS segment counting, keywords, message copy
+test/              node:test suite
 ```
 
-## Local preview
+## Local development
 
 ```sh
-npx serve public
-# or
-python3 -m http.server -d public 8000
+npm install
+npm run dev        # http://localhost:8080, in-memory data, simulated texts
+npm test
 ```
+
+`npm run dev` sets `DEV_ADMIN_EMAIL`, which adds a "Continue as local dev" button
+on `/admin` so you can skip Google sign-in. That shortcut is ignored on Cloud Run.
+
+## How texting works
+
+1. Someone fills in the homepage form (name, US mobile, groups, consent checkbox).
+   They're saved as **pending** with a consent record (wording, time, IP).
+2. We text them "Reply YES to confirm". Replying YES makes them **subscribed**.
+3. Blasts go to subscribed members of the chosen groups. `{first_name}` is filled in
+   per person, and "Reply STOP to opt out" is appended unless unticked.
+4. STOP/START/HELP replies are handled by Twilio's opt-out management and recorded
+   here (STOP → **unsubscribed**). Admins can stop texting someone but can't opt
+   them back in; only the person can, by texting START.
+5. Delivery receipts update each blast's delivered/failed counts. All replies show
+   in the admin's Replies tab.
+
+Until Twilio is configured, every send is **simulated**: logged and recorded in
+History, but nothing leaves the server. The admin page shows a banner.
+
+## Configuration (Cloud Run environment)
+
+| Variable | What it is |
+| --- | --- |
+| `PUBLIC_BASE_URL` | `https://bktennisclub.com`. Used for Twilio webhook URLs and signature checks |
+| `GOOGLE_CLIENT_ID` | OAuth **Web client** ID used by the admin Google sign-in |
+| `ADMIN_EMAILS` | Comma-separated Google accounts allowed into `/admin` |
+| `TWILIO_ACCOUNT_SID` | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | Twilio auth token. Stored in Secret Manager as `twilio-auth-token` |
+| `TWILIO_MESSAGING_SERVICE_SID` | The Messaging Service (`MG…`) that holds the club's number |
+
+Data lives in Firestore (Native mode, database `(default)`) in project
+`tennis-club-512223`. The service runs as `bktennisclub-run@tennis-club-512223.iam.gserviceaccount.com`.
+
+## One-time setup
+
+### Admin sign-in (Google)
+1. Cloud Console → APIs & Services → **OAuth consent screen**: set it up (External, app name "BK Tennis Club Admin").
+2. **Credentials → Create credentials → OAuth client ID → Web application**.
+   Authorized JavaScript origins: `https://bktennisclub.com`, `https://www.bktennisclub.com`, `http://localhost:8080`.
+3. Put the client ID in `GOOGLE_CLIENT_ID` and redeploy.
+
+### Twilio
+1. Create a Twilio account and buy a US local number.
+2. Create a **Messaging Service** and add the number to it. Under the service's
+   Integration settings, set **Incoming messages → Send a webhook** to
+   `https://bktennisclub.com/webhooks/twilio/inbound`.
+3. Register for **A2P 10DLC** (Brand + Campaign). Use the homepage form as the
+   opt-in, and link `https://bktennisclub.com/terms` and `/privacy`. Carriers
+   approve in roughly 1–3 weeks; US texts are blocked until then.
+4. Optional: in the Messaging Service's Advanced Opt-Out, set the HELP reply to the
+   text in `server/lib/sms-text.js` (`messages.help`).
+5. Add the credentials (see Deploy) and redeploy. The admin banner disappears.
+
+## Deploy
+
+```sh
+gcloud run deploy bktennisclub --source . \
+  --project tennis-club-512223 --region us-east1
+```
+
+Environment variables and secrets are kept on the service between deploys. To change them:
+
+```sh
+gcloud run services update bktennisclub --project tennis-club-512223 --region us-east1 \
+  --update-env-vars GOOGLE_CLIENT_ID=...,ADMIN_EMAILS=a@x.com,b@y.com
+
+# Twilio
+printf %s "$TWILIO_AUTH_TOKEN" | gcloud secrets versions add twilio-auth-token --data-file=- --project tennis-club-512223
+gcloud run services update bktennisclub --project tennis-club-512223 --region us-east1 \
+  --update-env-vars TWILIO_ACCOUNT_SID=AC...,TWILIO_MESSAGING_SERVICE_SID=MG... \
+  --update-secrets TWILIO_AUTH_TOKEN=twilio-auth-token:latest
+```
+
+Domain: registered through Cloud Domains in the same project, DNS in the Cloud DNS
+zone `bktennisclub-com`. Both `bktennisclub.com` and `www.bktennisclub.com` are
+Cloud Run domain mappings.
 
 ## Adding an event
 
-Add an object to `public/events.js`. Events with a date before today automatically move to "Past events".
-
-## Deploy to Google Cloud
-
-Live at **https://bktennisclub.com** (also `www.`), served by Cloud Run service
-`bktennisclub` in project `tennis-club-512223`, region `us-east1`.
-
-### Option A: Cloud Run (current setup)
-
-```sh
-gcloud run deploy bktennisclub \
-  --source . \
-  --project tennis-club-512223 \
-  --region us-east1 \
-  --allow-unauthenticated
-```
-
-Cloud Build builds the `Dockerfile` and Cloud Run serves it.
-
-Domain: registered through Cloud Domains in the same project, DNS in the
-Cloud DNS zone `bktennisclub-com`. Both `bktennisclub.com` and
-`www.bktennisclub.com` are Cloud Run domain mappings; the A/AAAA records and
-the `www` CNAME (`ghs.googlehosted.com.`) live in that zone.
-
-### Option B: Cloud Storage static bucket
-
-```sh
-gcloud storage buckets create gs://YOUR_BUCKET --location=us-east1
-gcloud storage cp -r public/* gs://YOUR_BUCKET
-gcloud storage buckets update gs://YOUR_BUCKET --web-main-page-suffix=index.html
-gcloud storage buckets add-iam-policy-binding gs://YOUR_BUCKET \
-  --member=allUsers --role=roles/storage.objectViewer
-```
-
-(Option B needs an HTTPS load balancer in front for a custom domain over HTTPS.)
+Add an object to `public/events.js`. Events dated before today automatically move to "Past events".
 
 ## TODO
 
-- Real photos (from Instagram/TikTok) for the hero and about sections
-- Group chat invite link (currently points to Instagram DMs)
-- Confirm regular Friday-night session time and courts
-- Full visual design pass
+- Real photos for the gallery
+- Confirm the regular Friday-night session time and courts

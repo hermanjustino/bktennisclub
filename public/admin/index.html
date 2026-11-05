@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin · BK Tennis Club</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#6a373a">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body class="admin">
+  <header class="site-header">
+    <div class="container nav">
+      <a href="/" class="brand">
+        <img src="/images/club-photo.png" alt="" width="44" height="44">
+        <span>BK Tennis Club <small>Admin</small></span>
+      </a>
+      <div id="account" class="account" hidden>
+        <span id="account-email"></span>
+        <button id="sign-out" type="button" class="btn">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="signin" class="container signin" hidden>
+      <div class="panel">
+        <h1>Admin sign-in</h1>
+        <p>Sign in with the Google account that's on the admin list.</p>
+        <div id="gsi-button"></div>
+        <button id="dev-signin" type="button" class="btn btn-accent" hidden>Continue as local dev</button>
+        <p id="signin-error" class="form-error" role="alert"></p>
+      </div>
+    </section>
+
+    <div id="app" hidden>
+      <div id="sms-banner" class="banner" hidden>
+        <div class="container">
+          <strong>Texting isn't connected yet.</strong>
+          Blasts and tests are simulated: they're saved to History but no texts go out until Twilio is set up.
+        </div>
+      </div>
+
+      <div class="container">
+        <nav class="tabs" aria-label="Admin sections">
+          <button type="button" data-tab="send" aria-current="page">Send</button>
+          <button type="button" data-tab="contacts">Contacts</button>
+          <button type="button" data-tab="groups">Groups</button>
+          <button type="button" data-tab="history">History</button>
+          <button type="button" data-tab="replies">Replies</button>
+        </nav>
+
+        <div id="totals" class="totals"></div>
+
+        <section id="tab-send" class="tab-panel"></section>
+        <section id="tab-contacts" class="tab-panel" hidden></section>
+        <section id="tab-groups" class="tab-panel" hidden></section>
+        <section id="tab-history" class="tab-panel" hidden></section>
+        <section id="tab-replies" class="tab-panel" hidden></section>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="edit-contact" class="dialog">
+    <form method="dialog" id="edit-contact-form">
+      <h2>Edit contact</h2>
+      <label class="field"><span>Name</span><input name="name" class="admin-input" maxlength="80"></label>
+      <fieldset class="group-options"><legend>Groups</legend><div data-groups></div></fieldset>
+      <p class="form-error" role="alert"></p>
+      <div class="btn-group">
+        <button type="submit" value="save" class="btn btn-ink">Save</button>
+        <button type="submit" value="cancel" class="btn" formnovalidate>Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="/admin/sms-text.js"></script>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>
